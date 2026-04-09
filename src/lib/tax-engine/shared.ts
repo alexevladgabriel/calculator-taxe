@@ -18,28 +18,30 @@ export function getPersonalDeduction(
 
 /**
  * Calculate CAS (pension contribution) for PFA.
- * CAS is due if annual net income >= pfaCasThresholdMonths × minimum wage.
- * The base is capped between 12 × min wage and 24 × min wage.
+ * CAS uses FIXED bracket amounts (not progressive):
+ * - Income < 12x min wage: CAS not mandatory (0)
+ * - Income 12x-24x min wage: CAS = 12x min wage * 25% (fixed 12,150 for 2026)
+ * - Income >= 24x min wage: CAS = 24x min wage * 25% (fixed 24,300 for 2026)
  */
 export function calculatePfaCAS(
   annualNetIncome: number,
   config: YearConfig,
   status: PersonalStatus
 ): number {
-  // If employed elsewhere, CAS is already paid through employment
   if (status.isEmployedElsewhere) return 0;
-  // Pensioners don't pay CAS
   if (status.isPensioner) return 0;
 
-  const threshold = config.pfaCasThresholdMonths * config.minimumGrossWage;
-  if (annualNetIncome < threshold) return 0;
+  const bracket12 = 12 * config.minimumGrossWage;
+  const bracket24 = 24 * config.minimumGrossWage;
 
-  // CAS base is clamped: min 12 × min wage, max 24 × min wage
-  const minBase = 12 * config.minimumGrossWage;
-  const maxBase = 24 * config.minimumGrossWage;
-  const casBase = Math.min(Math.max(annualNetIncome, minBase), maxBase);
+  if (annualNetIncome < bracket12) return 0;
 
-  return casBase * config.pfaCasRate;
+  // Fixed bracket amounts - you pay on the bracket base, not on actual income
+  if (annualNetIncome >= bracket24) {
+    return bracket24 * config.pfaCasRate;
+  }
+
+  return bracket12 * config.pfaCasRate;
 }
 
 /**

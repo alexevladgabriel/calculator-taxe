@@ -3,16 +3,14 @@ import type { YearConfig } from "../types";
 /**
  * Romanian tax parameters for 2026.
  *
- * Sources: Verified spreadsheet data.
+ * Sources: Solo.ro calculator 2026, Cod Fiscal actualizat.
  * - Salariu minim brut: 4,050 RON/luna
  * - CAS: 25% (include pilonul 2 de 4.75%)
- * - CASS: 10%
- * - Impozit venit CIM: 10%
- * - SRL Micro: 1% cifra de afaceri
+ * - CASS: 10%, praguri 6x/12x/24x/72x salariu minim
+ * - SRL Micro: 1% unic (fara distinctie cu/fara angajat)
  * - SRL Impozit profit: 16%
- * - SRL Impozit dividende: 10% (majorat fata de 8% in 2025)
+ * - SRL Impozit dividende: 16% (majorat de la 8% in 2025)
  * - PFA Norma de venit IT: 40,000 RON/an
- * - PFA Plafon norma: 126,133 RON
  * - CAM: ~2.07% (84 lei pe salariu minim de 4,050)
  */
 export const config2026: YearConfig = {
@@ -44,25 +42,32 @@ export const config2026: YearConfig = {
   ],
 
   // ── PFA ──
+  // CAS: obligatoriu daca venit net >= 12x salariu minim
+  // Baza CAS: fix 12x (48,600) sau 24x (97,200) salariu minim
   pfaCasThresholdMonths: 12,
   pfaCasRate: 0.25,
+  // CASS praguri: 6x / 12x / 24x / 72x salariu minim
+  // Minim CASS: 2,430 lei (6 x 4,050 x 10%)
+  // Maxim CASS: 29,160 lei (72 x 4,050 x 10%)
   pfaCassThresholds: [
     { minIncome: 6 * 4_050, cassBase: 6 * 4_050 },
     { minIncome: 12 * 4_050, cassBase: 12 * 4_050 },
     { minIncome: 24 * 4_050, cassBase: 24 * 4_050 },
+    { minIncome: 72 * 4_050, cassBase: 72 * 4_050 },
   ],
 
   // ── SRL Micro ──
+  // 2026: rata unica 1% (fara distinctie cu/fara angajat)
   microTaxRateWithEmployee: 0.01,
-  microTaxRateWithoutEmployee: 0.03,
+  microTaxRateWithoutEmployee: 0.01,
   microRevenueLimitEUR: 300_000,
   eurToRon: 4.99,
 
   // ── SRL Standard ──
   corporateTaxRate: 0.16,
 
-  // ── Dividends (MAJORAT in 2026: 10% vs 8% in 2025) ──
-  dividendTaxRate: 0.10,
+  // ── Dividends (MAJORAT in 2026: 16% vs 8% in 2025) ──
+  dividendTaxRate: 0.16,
   dividendCassThresholdMonths: 6,
   dividendCassRate: 0.10,
 
