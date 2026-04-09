@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { ComparisonResult, StructureType, TaxResult } from "@/lib/tax-engine";
 import { ResultCard } from "./ResultCard";
 import { ResultTable } from "./ResultTable";
 import { InfoModal } from "./InfoModal";
 import { DetailedBreakdown } from "./DetailedBreakdown";
-import { LayoutGrid, Table, Calendar, CalendarDays } from "lucide-react";
+import { LayoutGrid, Table, Calendar, CalendarDays, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ComparisonViewProps {
@@ -23,6 +23,14 @@ export function ComparisonView({
   const [viewType, setViewType] = useState<"cards" | "table">("cards");
   const [infoType, setInfoType] = useState<StructureType | null>(null);
   const [detailResult, setDetailResult] = useState<TaxResult | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+
+  // Auto-select the winner when comparison results change
+  useEffect(() => {
+    if (comparison) {
+      setDetailResult(comparison.winner);
+    }
+  }, [comparison]);
 
   if (!comparison) {
     return (
@@ -58,6 +66,17 @@ export function ComparisonView({
           {" · "}
           <span className="text-zinc-500">Click pe un card pentru detalii</span>
         </p>
+        {detailResult && (
+          <button
+            type="button"
+            onClick={() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="inline-flex items-center gap-1 mt-2 text-xs text-emerald-600 hover:text-emerald-700 transition-colors animate-bounce"
+          >
+            <ChevronDown className="h-3.5 w-3.5" />
+            Deruleaza in jos pentru vizualizare detaliata
+            <ChevronDown className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Controls */}
@@ -156,11 +175,13 @@ export function ComparisonView({
 
       {/* Detailed breakdown panel */}
       {detailResult && (
-        <DetailedBreakdown
-          result={detailResult}
-          displayMode={displayMode}
-          onClose={() => setDetailResult(null)}
-        />
+        <div ref={detailRef} className="scroll-mt-4">
+          <DetailedBreakdown
+            result={detailResult}
+            displayMode={displayMode}
+            onClose={() => setDetailResult(null)}
+          />
+        </div>
       )}
 
       {/* Info modal */}
