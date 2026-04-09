@@ -33,6 +33,19 @@ export function Footer() {
             >
               Open source on GitHub
             </a>
+            {process.env.NEXT_PUBLIC_COMMIT_HASH && (
+              <>
+                {" · "}
+                <a
+                  href={`https://github.com/alexevladgabriel/calculator-taxe/commit/${process.env.NEXT_PUBLIC_COMMIT_HASH}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono hover:text-zinc-700 transition-colors"
+                >
+                  v{process.env.NEXT_PUBLIC_COMMIT_HASH}
+                </a>
+              </>
+            )}
           </p>
         </div>
       </div>
