@@ -1,13 +1,18 @@
 import type { CalculatorInputs, TaxResult, TaxLineItem, YearConfig } from "../types";
-import { calculatePfaCAS, calculatePfaCASS } from "../shared";
+import { calculatePfaCAS } from "../shared";
 
 /**
- * Calculate taxes for PFA  - Norma de Venit (fixed income norm system).
+ * Calculate taxes for PFA - Norma de Venit (fixed income norm system).
  *
- * The taxable base is a fixed "norma" amount set by authorities per activity.
- * Income tax = 10% of norma (prorated by months of activity)
- * CAS/CASS are determined by the norma value as the income base.
- * Net = Actual gross income - taxes (taxes are based on norma, not actual income).
+ * KEY DIFFERENCE from Sistem Real:
+ * ALL taxes are calculated on the NORMA, not on actual income.
+ * CAS/CASS are NOT deducted from the income tax base.
+ *
+ * Source: universulfiscal.ro, Cod Fiscal
+ * - Income tax = 10% of norma (direct, no deductions)
+ * - CASS = 10% of norma (direct, not progressive)
+ * - CAS = 25% fixed bracket IF norma exceeds threshold
+ * - Net = actual gross income - taxes (taxes based on norma, not gross)
  */
 export function calculatePfaNorma(
   inputs: CalculatorInputs,
@@ -23,40 +28,55 @@ export function calculatePfaNorma(
 
   const annualGross = grossMonthlyIncome * monthsOfActivity;
 
-  // Find the norma for this activity
   const activity = config.normaActivities.find(
     (a) => a.code === activityType
   );
 
   if (!activity) {
     warnings.push(
-      "Activitatea selectată nu are normă de venit definită. Calculul folosește PFA Sistem Real."
+      "Activitatea selectata nu are norma de venit definita."
     );
-    // Fall back to a zero norma  - effectively no PFA norma calculation
     return createFallbackResult(annualGross, monthsOfActivity, warnings);
   }
 
   // Prorate norma by months of activity
   const annualNorma = activity.annualNorma * (monthsOfActivity / 12);
 
-  // CAS/CASS are based on norma value (the "declared income")
+  // CAS: fixed bracket based on NORMA value (not actual income)
   const cas = calculatePfaCAS(annualNorma, config, personalStatus);
-  const cass = calculatePfaCASS(annualNorma, config, personalStatus);
 
-  // Income tax: 10% of (norma - CAS - CASS), Art. 68 Cod Fiscal
-  const taxableNorma = Math.max(0, annualNorma - cas - cass);
-  const incomeTax = taxableNorma * config.incomeTaxRate;
+  // CASS: 10% of NORMA directly (not progressive like sistem real)
+  // Exemptions: employed elsewhere, student, handicap, pensioner
+  const isExempted =
+    personalStatus.isEmployedElsewhere ||
+    personalStatus.isStudent ||
+    personalStatus.isHandicapped ||
+    personalStatus.isPensioner;
+  const cass = isExempted ? 0 : annualNorma * config.cassRate;
+
+  // Income tax: 10% of NORMA directly (NO deduction of CAS/CASS)
+  const incomeTax = annualNorma * config.incomeTaxRate;
 
   const totalTaxes = incomeTax + cas + cass;
+  // "Bani in mana" = actual gross - taxes (taxes are based on norma, not gross)
   const netAnnualIncome = annualGross - totalTaxes;
-
-  if (personalStatus.isEmployedElsewhere) {
-    warnings.push("Angajat în altă parte  - CAS și CASS nu se datorează");
-  }
 
   warnings.push(
     `Norma de venit: ${activity.annualNorma.toLocaleString("ro-RO")} lei/an (${activity.label})`
   );
+
+  if (personalStatus.isEmployedElsewhere) {
+    warnings.push("Angajat in alta parte - CAS si CASS nu se datoreaza");
+  }
+
+  // 25,000 EUR threshold warning
+  const eurThreshold = 25_000;
+  const grossInEur = annualGross / config.eurToRon;
+  if (grossInEur > eurThreshold) {
+    warnings.push(
+      `Venit depaseste ${eurThreshold.toLocaleString()} EUR - obligatoriu trecere la sistem real anul urmator`
+    );
+  }
 
   const breakdown: TaxLineItem[] = [
     {
@@ -65,25 +85,25 @@ export function calculatePfaNorma(
       note: `${monthsOfActivity} luni`,
     },
     {
-      label: "CASS (sănătate)",
+      label: "CASS (sanatate)",
       amount: -cass,
-      note: `${config.cassRate * 100}%`,
+      note: cass > 0 ? `${config.cassRate * 100}% din norma` : "scutit",
     },
     {
       label: "CAS (pensie)",
       amount: -cas,
-      note: cas > 0 ? `${config.pfaCasRate * 100}%` : "sub prag",
+      note: cas > 0 ? "fix pe prag" : "norma sub prag",
     },
     {
       label: "Impozit pe venit",
       amount: -incomeTax,
-      note: `${config.incomeTaxRate * 100}% din normă`,
+      note: `${config.incomeTaxRate * 100}% din norma`,
     },
   ];
 
   return {
     structureType: "pfa-norma",
-    label: "PFA (Normă)",
+    label: "PFA (Norma)",
     grossAnnualIncome: annualGross,
     breakdown,
     totalTaxes,
@@ -100,7 +120,7 @@ function createFallbackResult(
 ): TaxResult {
   return {
     structureType: "pfa-norma",
-    label: "PFA (Normă)",
+    label: "PFA (Norma)",
     grossAnnualIncome: annualGross,
     breakdown: [
       {
