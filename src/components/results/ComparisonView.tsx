@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { ComparisonResult, StructureType } from "@/lib/tax-engine";
+import type { ComparisonResult, StructureType, TaxResult } from "@/lib/tax-engine";
 import { ResultCard } from "./ResultCard";
 import { ResultTable } from "./ResultTable";
 import { InfoModal } from "./InfoModal";
+import { DetailedBreakdown } from "./DetailedBreakdown";
 import { LayoutGrid, Table, Calendar, CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export function ComparisonView({
 }: ComparisonViewProps) {
   const [viewType, setViewType] = useState<"cards" | "table">("cards");
   const [infoType, setInfoType] = useState<StructureType | null>(null);
+  const [detailResult, setDetailResult] = useState<TaxResult | null>(null);
 
   if (!comparison) {
     return (
@@ -38,6 +40,12 @@ export function ComparisonView({
     );
   }
 
+  const handleCardClick = (result: TaxResult) => {
+    setDetailResult(
+      detailResult?.structureType === result.structureType ? null : result
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Title */}
@@ -47,6 +55,8 @@ export function ComparisonView({
         </h2>
         <p className="text-sm text-zinc-500 mt-1">
           Comparatie completa pentru {comparison.yearConfig.year}
+          {" · "}
+          <span className="text-zinc-500">Click pe un card pentru detalii</span>
         </p>
       </div>
 
@@ -56,7 +66,7 @@ export function ComparisonView({
         <div className="flex gap-1 bg-zinc-100 rounded-lg p-0.5">
           <button
             type="button"
-            onClick={() => setViewType("cards")}
+            onClick={() => { setViewType("cards"); setDetailResult(null); }}
             className={cn(
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
               viewType === "cards"
@@ -69,7 +79,7 @@ export function ComparisonView({
           </button>
           <button
             type="button"
-            onClick={() => setViewType("table")}
+            onClick={() => { setViewType("table"); setDetailResult(null); }}
             className={cn(
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all",
               viewType === "table"
@@ -117,7 +127,14 @@ export function ComparisonView({
       {viewType === "cards" ? (
         <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3">
           {comparison.results.map((result) => (
-            <div key={result.structureType} className="min-w-[280px] sm:min-w-0 snap-start">
+            <div
+              key={result.structureType}
+              className={cn(
+                "min-w-[280px] sm:min-w-0 snap-start cursor-pointer transition-all",
+                detailResult?.structureType === result.structureType && "ring-2 ring-emerald-500 ring-offset-2 rounded-2xl"
+              )}
+              onClick={() => handleCardClick(result)}
+            >
               <ResultCard
                 result={result}
                 isWinner={
@@ -134,6 +151,15 @@ export function ComparisonView({
           results={comparison.results}
           winnerType={comparison.winner.structureType}
           displayMode={displayMode}
+        />
+      )}
+
+      {/* Detailed breakdown panel */}
+      {detailResult && (
+        <DetailedBreakdown
+          result={detailResult}
+          displayMode={displayMode}
+          onClose={() => setDetailResult(null)}
         />
       )}
 
