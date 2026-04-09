@@ -11,7 +11,7 @@ import { calculateSrlStandard } from "./calculators/srl-standard";
  * Returns results sorted by net income (highest first) with the winner identified.
  *
  * Unsustainable options (e.g. PFA Norma over 25k EUR) are sorted last
- * and can never be the winner — even if they yield the highest net income,
+ * and can never be the winner - even if they yield the highest net income,
  * they cannot be maintained beyond the current year.
  */
 export function compareAllStructures(

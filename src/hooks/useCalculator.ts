@@ -38,7 +38,7 @@ const INITIAL_STATE: CalculatorState = {
   county: "Bucuresti",
   personalStatus: DEFAULT_STATUS,
   year: getDefaultYear(),
-  srlHasEmployee: true,
+  srlHasEmployee: false,
   mealTicketsPerMonth: 0,
   mealTicketValue: 40,
   displayMode: "monthly",

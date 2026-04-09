@@ -25,7 +25,7 @@ export function ResultCard({ result, isWinner, displayMode, onInfoClick }: Resul
       className={cn(
         "rounded-2xl border-2 p-5 transition-all h-full flex flex-col",
         isUnsustainable
-          ? "border-amber-300 bg-amber-50/30 opacity-75"
+          ? "border-amber-600 bg-amber-50/30 opacity-75"
           : isWinner
             ? "border-emerald-500 bg-emerald-50/40 shadow-lg shadow-emerald-100"
             : "border-zinc-200 bg-white hover:border-zinc-300"
@@ -33,10 +33,10 @@ export function ResultCard({ result, isWinner, displayMode, onInfoClick }: Resul
     >
       {/* Unsustainable banner */}
       {isUnsustainable && (
-        <div className="flex items-center gap-2 rounded-lg bg-amber-100 border border-amber-300 px-3 py-2 mb-3 text-amber-800">
+        <div className="flex items-center gap-2 rounded-lg bg-amber-100 border border-amber-500 px-3 py-2 mb-3 text-amber-900">
           <Ban className="h-4 w-4 shrink-0" />
           <span className="text-xs font-medium leading-tight">
-            Nu poate fi mentinut — depasesti plafonul, obligatoriu trecere la sistem real
+            Nu poate fi mentinut - depasesti plafonul, obligatoriu trecere la sistem real
           </span>
         </div>
       )}

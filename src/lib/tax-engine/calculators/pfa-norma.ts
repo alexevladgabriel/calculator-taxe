@@ -1,6 +1,6 @@
 import type { CalculatorInputs, TaxResult, TaxLineItem, YearConfig } from "../types";
 import { calculatePfaCAS } from "../shared";
-import { getNormaForCounty } from "../norme-lookup";
+import { getNormaForCounty, isNormaEstimated } from "../norme-lookup";
 
 /**
  * Calculate taxes for PFA - Norma de Venit (fixed income norm system).
@@ -32,7 +32,7 @@ export function calculatePfaNorma(
   let normaSource = "";
 
   if (county) {
-    annualNormaFull = getNormaForCounty(county, activityType);
+    annualNormaFull = getNormaForCounty(county, activityType, inputs.year);
     if (annualNormaFull) {
       normaSource = county;
     }
@@ -76,8 +76,9 @@ export function calculatePfaNorma(
   const totalTaxes = incomeTax + cas + cass;
   const netAnnualIncome = annualGross - totalTaxes;
 
+  const estimated = isNormaEstimated(inputs.year);
   warnings.push(
-    `Norma ${normaSource}: ${annualNormaFull.toLocaleString("ro-RO")} lei/an. Taxele se calculeaza pe aceasta suma fixa, nu pe venitul real.`
+    `Norma ${normaSource}: ${annualNormaFull.toLocaleString("ro-RO")} lei/an${estimated ? " (date ANAF 2025, norme " + inputs.year + " inca nepublicate)" : " (date ANAF)"}. Taxele se calculeaza pe aceasta suma fixa.`
   );
 
   if (personalStatus.isEmployedElsewhere) {

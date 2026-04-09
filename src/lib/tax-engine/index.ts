@@ -5,7 +5,7 @@ export { calculatePfaReal } from "./calculators/pfa-real";
 export { calculatePfaNorma } from "./calculators/pfa-norma";
 export { calculateSrlMicro } from "./calculators/srl-micro";
 export { calculateSrlStandard } from "./calculators/srl-standard";
-export { getNormaForCounty, getActivitiesForCounty, COUNTIES } from "./norme-lookup";
+export { getNormaForCounty, getActivitiesForCounty, isNormaEstimated, COUNTIES } from "./norme-lookup";
 export { structureDescriptions } from "./descriptions";
 export { structureColors } from "./colors";
 export type { StructureColors } from "./colors";
