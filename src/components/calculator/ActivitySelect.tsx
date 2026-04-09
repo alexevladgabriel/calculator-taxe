@@ -33,11 +33,24 @@ export function ActivitySelect({ value, year, county, onChange }: ActivitySelect
       const configLabels = new Map(
         config.normaActivities.map((a) => [a.code, a.label])
       );
-      return countyActivities.map((a) => ({
+      const countyCAENs = new Set(countyActivities.map((a) => a.caen));
+
+      const countyItems: ActivityItem[] = countyActivities.map((a) => ({
         code: a.caen,
         label: a.label || configLabels.get(a.caen) || `CAEN ${a.caen}`,
         norma: a.norma,
       }));
+
+      // Add config defaults that are missing from county data (e.g. IT codes 6201, 6311)
+      const missingDefaults: ActivityItem[] = config.normaActivities
+        .filter((a) => !countyCAENs.has(a.code))
+        .map((a) => ({
+          code: a.code,
+          label: a.label,
+          norma: a.annualNorma,
+        }));
+
+      return [...missingDefaults, ...countyItems];
     }
 
     // Fallback to config defaults
