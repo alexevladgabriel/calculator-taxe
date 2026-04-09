@@ -24,8 +24,15 @@ export function Footer() {
             Codul Fiscal al României
           </p>
           <p className="text-xs text-zinc-500">
-            © {new Date().getFullYear()} Calculator Taxe România. Open source
-            project.
+            © {new Date().getFullYear()} Calculator Taxe Romania.{" "}
+            <a
+              href="https://github.com/alexevladgabriel/calculator-taxe"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-zinc-700 transition-colors"
+            >
+              Open source on GitHub
+            </a>
           </p>
         </div>
       </div>
