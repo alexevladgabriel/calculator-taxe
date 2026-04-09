@@ -39,12 +39,13 @@ export function calculatePfaNorma(
   // Prorate norma by months of activity
   const annualNorma = activity.annualNorma * (monthsOfActivity / 12);
 
-  // Income tax on norma
-  const incomeTax = annualNorma * config.incomeTaxRate;
-
   // CAS/CASS are based on norma value (the "declared income")
   const cas = calculatePfaCAS(annualNorma, config, personalStatus);
   const cass = calculatePfaCASS(annualNorma, config, personalStatus);
+
+  // Income tax: 10% of (norma - CAS - CASS), Art. 68 Cod Fiscal
+  const taxableNorma = Math.max(0, annualNorma - cas - cass);
+  const incomeTax = taxableNorma * config.incomeTaxRate;
 
   const totalTaxes = incomeTax + cas + cass;
   const netAnnualIncome = annualGross - totalTaxes;

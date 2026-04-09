@@ -2,12 +2,15 @@ import type { CalculatorInputs, TaxResult, TaxLineItem, YearConfig } from "../ty
 import { calculatePfaCAS, calculatePfaCASS } from "../shared";
 
 /**
- * Calculate taxes for PFA  - Sistem Real (real income system).
+ * Calculate taxes for PFA - Sistem Real (real income system).
  *
- * Net income = Gross income - Deductible expenses
- * Income tax = 10% of net income
- * CAS = 25% (if net income >= threshold, capped between 12-24 × min wage)
- * CASS = 10% (stepped thresholds at 6/12/24 × min wage)
+ * Art. 68 Cod Fiscal: CAS and CASS are deductible expenses for PFA.
+ *
+ * 1. Net income = Gross - Deductible expenses
+ * 2. CAS = fixed bracket (25% of 12x or 24x min wage)
+ * 3. CASS = 10% of net income (floor 6x, cap 72x min wage)
+ * 4. Income tax = 10% of (net income - CAS - CASS)  <-- CAS/CASS are deductible!
+ * 5. Bani in mana = gross - expenses - CAS - CASS - income tax
  */
 export function calculatePfaReal(
   inputs: CalculatorInputs,
@@ -18,22 +21,21 @@ export function calculatePfaReal(
   const warnings: string[] = [];
 
   const annualGross = grossMonthlyIncome * monthsOfActivity;
-  // Expenses can't exceed gross income
   const annualExpenses = Math.min(monthlyExpenses * monthsOfActivity, annualGross);
   const annualNetIncome = annualGross - annualExpenses;
 
-  // Income tax on net income
-  const incomeTax = annualNetIncome * config.incomeTaxRate;
-
-  // CAS (pension contribution)
+  // CAS and CASS are calculated on net income (gross - expenses)
   const cas = calculatePfaCAS(annualNetIncome, config, personalStatus);
-
-  // CASS (health insurance)
   const cass = calculatePfaCASS(annualNetIncome, config, personalStatus);
+
+  // Income tax: 10% of (net income - CAS - CASS)
+  // Art. 68 Cod Fiscal: CAS and CASS paid by PFA are deductible expenses
+  const taxableIncome = Math.max(0, annualNetIncome - cas - cass);
+  const incomeTax = taxableIncome * config.incomeTaxRate;
 
   const totalTaxes = incomeTax + cas + cass;
 
-  // "Bani in mana" = gross - expenses - taxes (real money you keep)
+  // "Bani in mana" = gross - expenses - all taxes
   const netAnnualIncome = annualGross - annualExpenses - totalTaxes;
 
   if (monthlyExpenses * monthsOfActivity > annualGross) {
@@ -49,7 +51,7 @@ export function calculatePfaReal(
   }
 
   if (personalStatus.isEmployedElsewhere) {
-    warnings.push("Angajat în altă parte  - CAS și CASS nu se datorează");
+    warnings.push("Angajat in alta parte - CAS si CASS nu se datoreaza");
   }
 
   const breakdown: TaxLineItem[] = [
@@ -68,12 +70,12 @@ export function calculatePfaReal(
   }
 
   breakdown.push(
-    { label: "CASS (sănătate)", amount: -cass, note: `${config.cassRate * 100}%` },
-    { label: "CAS (pensie)", amount: -cas, note: cas > 0 ? `${config.pfaCasRate * 100}%` : "sub prag" },
+    { label: "CASS (sanatate)", amount: -cass, note: `${config.cassRate * 100}% din venit` },
+    { label: "CAS (pensie)", amount: -cas, note: cas > 0 ? "fix pe prag" : "sub prag" },
     {
       label: "Impozit pe venit",
       amount: -incomeTax,
-      note: `${config.incomeTaxRate * 100}%`,
+      note: `${config.incomeTaxRate * 100}% din (venit - CAS - CASS)`,
     }
   );
 
