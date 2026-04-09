@@ -60,7 +60,19 @@ export function useCalculator() {
       mealTicketsPerMonth: state.mealTicketsPerMonth,
       mealTicketValue: state.mealTicketValue,
     }),
-    [state]
+    // Depend only on calculation-relevant fields, not displayMode
+    [
+      state.grossMonthlyIncome,
+      state.monthsOfActivity,
+      state.monthlyExpenses,
+      state.activityType,
+      state.county,
+      state.personalStatus,
+      state.year,
+      state.srlHasEmployee,
+      state.mealTicketsPerMonth,
+      state.mealTicketValue,
+    ]
   );
 
   const comparison: ComparisonResult | null = useMemo(() => {

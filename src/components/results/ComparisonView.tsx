@@ -25,11 +25,24 @@ export function ComparisonView({
   const [detailResult, setDetailResult] = useState<TaxResult | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
 
-  // Auto-select the winner when comparison results change
+  // Auto-select the winner when comparison results change.
+  // If user already has a card selected and only display data refreshed,
+  // keep their selection by finding the updated version of the same structure.
   useEffect(() => {
-    if (comparison) {
-      setDetailResult(comparison.winner);
+    if (!comparison) {
+      setDetailResult(null);
+      return;
     }
+
+    setDetailResult((prev) => {
+      if (!prev) return comparison.winner;
+
+      // Keep current selection if it still exists in new results
+      const updated = comparison.results.find(
+        (r) => r.structureType === prev.structureType
+      );
+      return updated ?? comparison.winner;
+    });
   }, [comparison]);
 
   if (!comparison) {
