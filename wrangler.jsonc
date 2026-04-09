@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
-  "name": "taxelemele-ro",
+  "name": "calculator-taxe",
   "compatibility_date": "2024-12-30",
   "compatibility_flags": [
     "nodejs_compat",
@@ -14,7 +14,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "taxelemele-ro"
+      "service": "calculator-taxe"
     }
   ],
   "durable_objects": {
