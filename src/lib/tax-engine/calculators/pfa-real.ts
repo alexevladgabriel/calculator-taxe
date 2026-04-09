@@ -18,8 +18,9 @@ export function calculatePfaReal(
   const warnings: string[] = [];
 
   const annualGross = grossMonthlyIncome * monthsOfActivity;
-  const annualExpenses = monthlyExpenses * monthsOfActivity;
-  const annualNetIncome = Math.max(0, annualGross - annualExpenses);
+  // Expenses can't exceed gross income
+  const annualExpenses = Math.min(monthlyExpenses * monthsOfActivity, annualGross);
+  const annualNetIncome = annualGross - annualExpenses;
 
   // Income tax on net income
   const incomeTax = annualNetIncome * config.incomeTaxRate;
@@ -31,12 +32,15 @@ export function calculatePfaReal(
   const cass = calculatePfaCASS(annualNetIncome, config, personalStatus);
 
   const totalTaxes = incomeTax + cas + cass;
-  const netAfterTax = annualGross - annualExpenses - totalTaxes;
 
-  // The "bani în mână" is gross - expenses - taxes
-  // But for comparison fairness, we show it as: gross - all taxes
-  // (expenses are a real cost, not a tax)
-  const netAnnualIncome = annualGross - totalTaxes;
+  // "Bani in mana" = gross - expenses - taxes (real money you keep)
+  const netAnnualIncome = annualGross - annualExpenses - totalTaxes;
+
+  if (monthlyExpenses * monthsOfActivity > annualGross) {
+    warnings.push(
+      "Cheltuielile depasesc venitul - limitate la venitul brut"
+    );
+  }
 
   if (annualExpenses > 0) {
     warnings.push(

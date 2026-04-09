@@ -28,8 +28,12 @@ export function calculateSrlStandard(
   const warnings: string[] = [];
 
   const annualRevenue = grossMonthlyIncome * monthsOfActivity;
-  const annualExpenses = monthlyExpenses * monthsOfActivity;
-  const taxableProfit = Math.max(0, annualRevenue - annualExpenses);
+  const annualExpenses = Math.min(monthlyExpenses * monthsOfActivity, annualRevenue);
+  const taxableProfit = annualRevenue - annualExpenses;
+
+  if (monthlyExpenses * monthsOfActivity > annualRevenue) {
+    warnings.push("Cheltuielile depasesc venitul - limitate la venitul brut");
+  }
 
   // Corporate income tax
   const corporateTax = taxableProfit * config.corporateTaxRate;
