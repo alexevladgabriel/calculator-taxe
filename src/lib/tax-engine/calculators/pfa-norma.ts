@@ -62,7 +62,7 @@ export function calculatePfaNorma(
   const netAnnualIncome = annualGross - totalTaxes;
 
   warnings.push(
-    `Norma de venit: ${activity.annualNorma.toLocaleString("ro-RO")} lei/an (${activity.label})`
+    `Taxele se calculeaza pe norma fixa de ${activity.annualNorma.toLocaleString("ro-RO")} lei/an, nu pe venitul real. Cu cat castigi mai mult peste norma, cu atat e mai avantajos.`
   );
 
   if (personalStatus.isEmployedElsewhere) {
