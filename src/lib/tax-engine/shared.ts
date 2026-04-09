@@ -46,30 +46,49 @@ export function calculatePfaCAS(
 
 /**
  * Calculate CASS (health insurance) for PFA.
- * Uses stepped thresholds based on multiples of minimum wage.
- * Returns 0 if employed elsewhere (CASS already paid).
+ *
+ * CASS = 10% of net income, with:
+ * - Floor: 6x min wage * 10% (minimum, e.g. 2,430 lei for 2026)
+ * - Cap: highest threshold * 10% (e.g. 72x for 2026 = 29,160 lei)
+ *
+ * Exemptions (no minimum floor, pay 10% of actual net):
+ * - Employed elsewhere (with >= floor CASS through employment)
+ * - Students under 26
+ * - Handicap grade 1-2
+ * - Pensioners
+ *
+ * Zero or negative income = no CASS.
  */
 export function calculatePfaCASS(
   annualNetIncome: number,
   config: YearConfig,
   status: PersonalStatus
 ): number {
-  // If employed elsewhere, CASS is already paid through employment
-  if (status.isEmployedElsewhere) return 0;
+  if (annualNetIncome <= 0) return 0;
 
-  // Find the highest threshold the income exceeds
-  const thresholds = [...config.pfaCassThresholds].sort(
-    (a, b) => b.minIncome - a.minIncome
+  const sorted = [...config.pfaCassThresholds].sort(
+    (a, b) => a.minIncome - b.minIncome
   );
+  const floorBase = sorted[0].cassBase; // lowest threshold (6x)
+  const capBase = sorted[sorted.length - 1].cassBase; // highest (72x for 2026, 24x for older)
 
-  for (const t of thresholds) {
-    if (annualNetIncome >= t.minIncome) {
-      return t.cassBase * config.cassRate;
-    }
+  const floor = floorBase * config.cassRate;
+  const cap = capBase * config.cassRate;
+  const raw = annualNetIncome * config.cassRate;
+
+  // Exempted persons: 10% of actual net income, no minimum floor
+  const isExempted =
+    status.isEmployedElsewhere ||
+    status.isStudent ||
+    status.isHandicapped ||
+    status.isPensioner;
+
+  if (isExempted) {
+    return Math.min(raw, cap);
   }
 
-  // Below all thresholds  - no CASS due
-  return 0;
+  // Normal: 10% of net income, clamped between floor and cap
+  return Math.max(floor, Math.min(raw, cap));
 }
 
 /**

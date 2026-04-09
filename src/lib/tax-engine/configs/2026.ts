@@ -12,6 +12,8 @@ import type { YearConfig } from "../types";
  * - SRL Impozit dividende: 16% (majorat de la 8% in 2025)
  * - PFA Norma de venit IT: 40,000 RON/an
  * - CAM: ~2.07% (84 lei pe salariu minim de 4,050)
+ * - NOTA: Din 1 iulie 2026, salariul minim creste la 4,325 lei
+ *   (calculele folosesc 4,050 pentru prima jumatate a anului)
  */
 export const config2026: YearConfig = {
   year: 2026,
