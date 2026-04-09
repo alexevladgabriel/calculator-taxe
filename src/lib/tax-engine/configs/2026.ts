@@ -6,7 +6,7 @@ import type { YearConfig } from "../types";
  * Sources: Solo.ro calculator 2026, Cod Fiscal actualizat.
  * - Salariu minim brut: 4,050 RON/luna
  * - CAS: 25% (include pilonul 2 de 4.75%)
- * - CASS: 10%, praguri 6x/12x/24x/60x salariu minim
+ * - CASS: 10%, plafonat intre 6x si 72x salariu minim
  * - SRL Micro: 1% unic (fara distinctie cu/fara angajat)
  * - SRL Impozit profit: 16%
  * - SRL Impozit dividende: 16% (majorat de la 8% in 2025)
@@ -48,12 +48,13 @@ export const config2026: YearConfig = {
   // Baza CAS: fix 12x (48,600) sau 24x (97,200) salariu minim
   pfaCasThresholdMonths: 12,
   pfaCasRate: 0.25,
-  // CASS: 10% din venit net, plafonat intre 6x si 60x salariu minim
+  // CASS: 10% din venit net, plafonat intre 6x si 72x salariu minim
   // Minim CASS: 2,430 lei (6 x 4,050 x 10%)
-  // Maxim CASS: 24,300 lei (60 x 4,050 x 10%)
+  // Maxim CASS: 29,160 lei (72 x 4,050 x 10%)
+  // Sursa: REGNET calculator footnote (plafon 72 sal. min. 2026)
   pfaCassThresholds: [
     { minIncome: 6 * 4_050, cassBase: 6 * 4_050 },
-    { minIncome: 60 * 4_050, cassBase: 60 * 4_050 },
+    { minIncome: 72 * 4_050, cassBase: 72 * 4_050 },
   ],
 
   // ── SRL Micro ──
