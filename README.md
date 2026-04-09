@@ -32,16 +32,16 @@ git clone git@github.com:alexevladgabriel/calculator-taxe.git
 cd calculator-taxe
 
 # Install
-pnpm install
+bun install
 
 # Dev
-pnpm dev          # http://localhost:3000
+bun dev          # http://localhost:3000
 
 # Preview pe Cloudflare local
-pnpm preview      # http://localhost:8789
+bun preview      # http://localhost:8789
 
 # Deploy pe Cloudflare Workers
-pnpm deploy
+bun deploy
 ```
 
 ## Structura proiectului
@@ -175,10 +175,10 @@ Aplicatia ruleaza pe **Cloudflare Workers** via **OpenNext.js**.
 
 ```bash
 # Build + deploy
-pnpm deploy
+bun deploy
 
 # Preview local (Cloudflare runtime)
-pnpm preview
+bun preview
 ```
 
 Configureaza DNS-ul `taxelemele.ro` sa pointeze la Cloudflare.
