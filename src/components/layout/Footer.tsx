@@ -31,7 +31,7 @@ export function Footer() {
               rel="noopener noreferrer"
               className="underline hover:text-zinc-700 transition-colors"
             >
-              Open source on GitHub
+              Source code on GitHub
             </a>
             {process.env.NEXT_PUBLIC_COMMIT_HASH && (
               <>
