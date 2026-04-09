@@ -45,5 +45,9 @@
   ],
   "images": {
     "binding": "IMAGES"
-  }
+  },
+  "routes": [
+    { "pattern": "taxelemele.ro", "custom_domain": true },
+    { "pattern": "www.taxelemele.ro", "custom_domain": true }
+  ]
 }
