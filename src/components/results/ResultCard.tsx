@@ -3,7 +3,7 @@
 import type { TaxResult, StructureType } from "@/lib/tax-engine";
 import { structureDescriptions } from "@/lib/tax-engine/descriptions";
 import { formatRON, formatRONSigned } from "@/lib/format";
-import { Trophy, AlertTriangle, Info } from "lucide-react";
+import { Trophy, AlertTriangle, Info, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ResultCardProps {
@@ -18,17 +18,34 @@ export function ResultCard({ result, isWinner, displayMode, onInfoClick }: Resul
   const suffix = displayMode === "monthly" ? "/luna" : "/an";
   const desc = structureDescriptions[result.structureType];
 
+  const isUnsustainable = !result.sustainable;
+
   return (
     <div
       className={cn(
         "rounded-2xl border-2 p-5 transition-all h-full flex flex-col",
-        isWinner
-          ? "border-emerald-500 bg-emerald-50/40 shadow-lg shadow-emerald-100"
-          : "border-zinc-200 bg-white hover:border-zinc-300"
+        isUnsustainable
+          ? "border-amber-300 bg-amber-50/30 opacity-75"
+          : isWinner
+            ? "border-emerald-500 bg-emerald-50/40 shadow-lg shadow-emerald-100"
+            : "border-zinc-200 bg-white hover:border-zinc-300"
       )}
     >
-      {/* Header - green for winner, grey for the rest */}
-      <div className={cn("rounded-xl px-4 py-3 mb-4", isWinner ? "bg-emerald-600" : "bg-zinc-700")}>
+      {/* Unsustainable banner */}
+      {isUnsustainable && (
+        <div className="flex items-center gap-2 rounded-lg bg-amber-100 border border-amber-300 px-3 py-2 mb-3 text-amber-800">
+          <Ban className="h-4 w-4 shrink-0" />
+          <span className="text-xs font-medium leading-tight">
+            Nu poate fi mentinut — depasesti plafonul, obligatoriu trecere la sistem real
+          </span>
+        </div>
+      )}
+
+      {/* Header - green for winner, amber for unsustainable, grey for the rest */}
+      <div className={cn(
+        "rounded-xl px-4 py-3 mb-4",
+        isUnsustainable ? "bg-amber-600/80" : isWinner ? "bg-emerald-600" : "bg-zinc-700"
+      )}>
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-semibold text-white truncate" title={result.label}>
             {result.label}
@@ -42,16 +59,19 @@ export function ResultCard({ result, isWinner, displayMode, onInfoClick }: Resul
             >
               <Info className="h-3.5 w-3.5" />
             </button>
-            {isWinner && <Trophy className="h-4 w-4 text-yellow-300" />}
+            {isWinner && !isUnsustainable && <Trophy className="h-4 w-4 text-yellow-300" />}
           </div>
         </div>
         <p className="text-xs mt-0.5 line-clamp-2 text-white/80" title={desc.subtitle}>
           {desc.subtitle}
         </p>
-        <div className="text-2xl font-bold text-white tracking-tight mt-1 whitespace-nowrap">
+        <div className={cn(
+          "text-2xl font-bold text-white tracking-tight mt-1 whitespace-nowrap",
+          isUnsustainable && "line-through decoration-2 opacity-80"
+        )}>
           {formatRON(result.netAnnualIncome / divisor)}
         </div>
-        {isWinner && (
+        {isWinner && !isUnsustainable && (
           <span className="text-xs text-white/90 font-medium">
             Cea mai avantajoasa optiune
           </span>

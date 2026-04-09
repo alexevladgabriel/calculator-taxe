@@ -126,5 +126,6 @@ export function calculateSrlMicro(
     netAnnualIncome,
     effectiveTaxRate: annualRevenue > 0 ? totalTaxes / annualRevenue : 0,
     warnings,
+    sustainable: true,
   };
 }

@@ -9,6 +9,8 @@ export interface CalculatorInputs {
   readonly monthlyExpenses: number;
   /** Activity type key for PFA Norma de Venit */
   readonly activityType: string;
+  /** County for PFA Norma de Venit (norma varies by county) */
+  readonly county: string;
   /** Personal status flags */
   readonly personalStatus: PersonalStatus;
   /** Tax year */
@@ -46,6 +48,9 @@ export interface TaxResult {
   readonly netAnnualIncome: number;
   readonly effectiveTaxRate: number;
   readonly warnings: readonly string[];
+  /** When false, this option cannot be sustained long-term (e.g. PFA Norma over 25k EUR).
+   *  Unsustainable results are sorted last and cannot be the "winner". */
+  readonly sustainable: boolean;
 }
 
 export interface TaxLineItem {

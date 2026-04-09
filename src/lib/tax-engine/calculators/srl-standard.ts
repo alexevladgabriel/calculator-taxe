@@ -103,5 +103,6 @@ export function calculateSrlStandard(
     netAnnualIncome,
     effectiveTaxRate: annualRevenue > 0 ? totalTaxes / annualRevenue : 0,
     warnings,
+    sustainable: true,
   };
 }

@@ -130,5 +130,6 @@ export function calculateAngajat(
     netAnnualIncome: netAnnual,
     effectiveTaxRate: annualGross > 0 ? totalTaxes / annualGross : 0,
     warnings,
+    sustainable: true,
   };
 }

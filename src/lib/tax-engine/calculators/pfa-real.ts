@@ -88,5 +88,6 @@ export function calculatePfaReal(
     netAnnualIncome,
     effectiveTaxRate: annualGross > 0 ? totalTaxes / annualGross : 0,
     warnings,
+    sustainable: true,
   };
 }

@@ -21,6 +21,7 @@ export interface CalculatorState {
   readonly monthsOfActivity: number;
   readonly monthlyExpenses: number;
   readonly activityType: string;
+  readonly county: string;
   readonly personalStatus: PersonalStatus;
   readonly year: number;
   readonly srlHasEmployee: boolean;
@@ -34,6 +35,7 @@ const INITIAL_STATE: CalculatorState = {
   monthsOfActivity: 12,
   monthlyExpenses: 0,
   activityType: "6201",
+  county: "Bucuresti",
   personalStatus: DEFAULT_STATUS,
   year: getDefaultYear(),
   srlHasEmployee: true,
@@ -51,6 +53,7 @@ export function useCalculator() {
       monthsOfActivity: state.monthsOfActivity,
       monthlyExpenses: state.monthlyExpenses,
       activityType: state.activityType,
+      county: state.county,
       personalStatus: state.personalStatus,
       year: state.year,
       srlHasEmployee: state.srlHasEmployee,

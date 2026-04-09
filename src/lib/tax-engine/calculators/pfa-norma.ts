@@ -1,5 +1,6 @@
 import type { CalculatorInputs, TaxResult, TaxLineItem, YearConfig } from "../types";
 import { calculatePfaCAS } from "../shared";
+import { getNormaForCounty } from "../norme-lookup";
 
 /**
  * Calculate taxes for PFA - Norma de Venit (fixed income norm system).
@@ -8,11 +9,8 @@ import { calculatePfaCAS } from "../shared";
  * ALL taxes are calculated on the NORMA, not on actual income.
  * CAS/CASS are NOT deducted from the income tax base.
  *
- * Source: universulfiscal.ro, Cod Fiscal
- * - Income tax = 10% of norma (direct, no deductions)
- * - CASS = 10% of norma (direct, not progressive)
- * - CAS = 25% fixed bracket IF norma exceeds threshold
- * - Net = actual gross income - taxes (taxes based on norma, not gross)
+ * Norma values come from ANAF county-specific PDFs (2025 data).
+ * Falls back to config default if county data unavailable.
  */
 export function calculatePfaNorma(
   inputs: CalculatorInputs,
@@ -22,31 +20,49 @@ export function calculatePfaNorma(
     grossMonthlyIncome,
     monthsOfActivity,
     activityType,
+    county,
     personalStatus,
   } = inputs;
   const warnings: string[] = [];
 
   const annualGross = grossMonthlyIncome * monthsOfActivity;
 
-  const activity = config.normaActivities.find(
-    (a) => a.code === activityType
-  );
+  // Try county-specific norma from ANAF data first, fall back to config
+  let annualNormaFull: number | null = null;
+  let normaSource = "";
 
-  if (!activity) {
+  if (county) {
+    annualNormaFull = getNormaForCounty(county, activityType);
+    if (annualNormaFull) {
+      normaSource = county;
+    }
+  }
+
+  // Fallback to config defaults
+  if (!annualNormaFull) {
+    const activity = config.normaActivities.find(
+      (a) => a.code === activityType
+    );
+    if (activity) {
+      annualNormaFull = activity.annualNorma;
+      normaSource = "medie nationala";
+    }
+  }
+
+  if (!annualNormaFull) {
     warnings.push(
-      "Activitatea selectata nu are norma de venit definita."
+      "Activitatea selectata nu are norma de venit definita pentru acest judet."
     );
     return createFallbackResult(annualGross, monthsOfActivity, warnings);
   }
 
   // Prorate norma by months of activity
-  const annualNorma = activity.annualNorma * (monthsOfActivity / 12);
+  const annualNorma = annualNormaFull * (monthsOfActivity / 12);
 
   // CAS: fixed bracket based on NORMA value (not actual income)
   const cas = calculatePfaCAS(annualNorma, config, personalStatus);
 
   // CASS: 10% of NORMA directly (not progressive like sistem real)
-  // Exemptions: employed elsewhere, student, handicap, pensioner
   const isExempted =
     personalStatus.isEmployedElsewhere ||
     personalStatus.isStudent ||
@@ -58,11 +74,10 @@ export function calculatePfaNorma(
   const incomeTax = annualNorma * config.incomeTaxRate;
 
   const totalTaxes = incomeTax + cas + cass;
-  // "Bani in mana" = actual gross - taxes (taxes are based on norma, not gross)
   const netAnnualIncome = annualGross - totalTaxes;
 
   warnings.push(
-    `Taxele se calculeaza pe norma fixa de ${activity.annualNorma.toLocaleString("ro-RO")} lei/an, nu pe venitul real. Cu cat castigi mai mult peste norma, cu atat e mai avantajos.`
+    `Norma ${normaSource}: ${annualNormaFull.toLocaleString("ro-RO")} lei/an. Taxele se calculeaza pe aceasta suma fixa, nu pe venitul real.`
   );
 
   if (personalStatus.isEmployedElsewhere) {
@@ -72,7 +87,8 @@ export function calculatePfaNorma(
   // 25,000 EUR threshold warning
   const eurThreshold = 25_000;
   const grossInEur = annualGross / config.eurToRon;
-  if (grossInEur > eurThreshold) {
+  const exceedsNormaLimit = grossInEur > eurThreshold;
+  if (exceedsNormaLimit) {
     warnings.push(
       `Venit depaseste ${eurThreshold.toLocaleString()} EUR - obligatoriu trecere la sistem real anul urmator`
     );
@@ -110,6 +126,7 @@ export function calculatePfaNorma(
     netAnnualIncome,
     effectiveTaxRate: annualGross > 0 ? totalTaxes / annualGross : 0,
     warnings,
+    sustainable: !exceedsNormaLimit,
   };
 }
 
@@ -133,5 +150,6 @@ function createFallbackResult(
     netAnnualIncome: annualGross,
     effectiveTaxRate: 0,
     warnings,
+    sustainable: true,
   };
 }

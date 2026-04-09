@@ -23,6 +23,7 @@ function makeInputs(overrides: Partial<CalculatorInputs> = {}): CalculatorInputs
     monthsOfActivity: 12,
     monthlyExpenses: 0,
     activityType: "6201",
+    county: "Bucuresti",
     personalStatus: DEFAULT_STATUS,
     year: 2026,
     srlHasEmployee: true,
@@ -217,12 +218,13 @@ describe("PFA Norma de Venit 2026", () => {
   });
 
   it("norma above CAS threshold - CAS applies", () => {
-    // Transport marfuri: norma 50,000 > 48,600 (12x)
-    const inputs = makeInputs({ activityType: "4941" });
+    // Transport marfuri: county-specific norma may differ from config default.
+    // Use a county that doesn't have specific data to fall back to config (50,000).
+    const inputs = makeInputs({ activityType: "4941", county: "" });
     const result = calculatePfaNorma(inputs, config2026);
 
     const norma = 50_000;
-    const cas = 12_150; // 12x bracket
+    const cas = 12_150; // 12x bracket (norma 50,000 >= 48,600)
     const cass = norma * 0.10; // 5,000
     const tax = norma * 0.10; // 5,000
 
@@ -443,33 +445,62 @@ describe("SRL Standard 2026", () => {
 // ─── Compare All ────────────────────────────────────────────────
 
 describe("Compare All Structures", () => {
-  it("returns 5 results sorted by net income", () => {
+  it("returns 5 results, sustainable first then unsustainable", () => {
     const inputs = makeInputs();
     const comparison = compareAllStructures(inputs);
 
     expect(comparison.results).toHaveLength(5);
-    // Sorted descending by net income
-    for (let i = 1; i < comparison.results.length; i++) {
-      expect(comparison.results[i - 1].netAnnualIncome).toBeGreaterThanOrEqual(
-        comparison.results[i].netAnnualIncome
+    // Sustainable results come before unsustainable
+    let seenUnsustainable = false;
+    for (const r of comparison.results) {
+      if (!r.sustainable) seenUnsustainable = true;
+      if (seenUnsustainable) expect(r.sustainable).toBe(false);
+    }
+    // Within each group, sorted descending by net income
+    const sustainable = comparison.results.filter((r) => r.sustainable);
+    const unsustainable = comparison.results.filter((r) => !r.sustainable);
+    for (let i = 1; i < sustainable.length; i++) {
+      expect(sustainable[i - 1].netAnnualIncome).toBeGreaterThanOrEqual(
+        sustainable[i].netAnnualIncome
+      );
+    }
+    for (let i = 1; i < unsustainable.length; i++) {
+      expect(unsustainable[i - 1].netAnnualIncome).toBeGreaterThanOrEqual(
+        unsustainable[i].netAnnualIncome
       );
     }
   });
 
-  it("winner is the highest net income", () => {
+  it("winner is the highest net income among sustainable options", () => {
     const inputs = makeInputs();
     const comparison = compareAllStructures(inputs);
 
+    expect(comparison.winner.sustainable).toBe(true);
+    const sustainableResults = comparison.results.filter((r) => r.sustainable);
     expect(comparison.winner.netAnnualIncome).toBe(
-      comparison.results[0].netAnnualIncome
+      sustainableResults[0].netAnnualIncome
     );
   });
 
-  it("PFA Norma wins for IT at 8,000/month (low taxes on fixed norma)", () => {
+  it("PFA Norma wins for IT at 8,000/month when under 25k EUR", () => {
     const inputs = makeInputs({ activityType: "6201" });
     const comparison = compareAllStructures(inputs);
 
+    // 8,000 * 12 = 96,000 RON ~ 19,238 EUR (under 25k)
     expect(comparison.winner.structureType).toBe("pfa-norma");
+    expect(comparison.winner.sustainable).toBe(true);
+  });
+
+  it("PFA Norma does NOT win when income exceeds 25k EUR", () => {
+    const inputs = makeInputs({ grossMonthlyIncome: 15_000, activityType: "6201" });
+    const comparison = compareAllStructures(inputs);
+
+    // 15,000 * 12 = 180,000 RON ~ 36,072 EUR (over 25k)
+    expect(comparison.winner.structureType).not.toBe("pfa-norma");
+    expect(comparison.winner.sustainable).toBe(true);
+    // PFA Norma should be last
+    const norma = comparison.results.find((r) => r.structureType === "pfa-norma");
+    expect(norma!.sustainable).toBe(false);
   });
 
   it("all structures have valid structure types", () => {

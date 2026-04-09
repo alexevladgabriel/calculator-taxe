@@ -3,7 +3,7 @@
 import type { TaxResult } from "@/lib/tax-engine";
 import { formatRON } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Trophy, TrendingUp } from "lucide-react";
+import { Trophy, TrendingUp, Ban } from "lucide-react";
 
 interface ResultTableProps {
   readonly results: readonly TaxResult[];
@@ -45,18 +45,24 @@ export function ResultTable({
               Categorie
             </th>
             {results.map((r) => {
-              const isW = r.structureType === winnerType;
+              const isW = r.structureType === winnerType && r.sustainable;
+              const isUnsustainable = !r.sustainable;
               return (
                 <th
                   key={r.structureType}
                   className={cn(
                     "px-5 py-4 text-center text-sm font-semibold whitespace-nowrap",
-                    isW ? "text-emerald-700 bg-emerald-50/50" : "text-zinc-700"
+                    isUnsustainable
+                      ? "text-amber-600 bg-amber-50/50"
+                      : isW
+                        ? "text-emerald-700 bg-emerald-50/50"
+                        : "text-zinc-700"
                   )}
                 >
                   <div className="flex items-center justify-center gap-1.5">
                     {r.label}
                     {isW && <Trophy className="h-4 w-4 text-amber-500" />}
+                    {isUnsustainable && <Ban className="h-4 w-4 text-amber-500" />}
                   </div>
                 </th>
               );

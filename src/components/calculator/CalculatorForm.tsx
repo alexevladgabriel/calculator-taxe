@@ -4,6 +4,7 @@ import type { CalculatorState, useCalculator } from "@/hooks/useCalculator";
 import type { PersonalStatus } from "@/lib/tax-engine";
 import { YearSelector } from "./YearSelector";
 import { ActivitySelect } from "./ActivitySelect";
+import { CountySelect } from "./CountySelect";
 import { formatNumber } from "@/lib/format";
 import {
   GraduationCap,
@@ -75,6 +76,12 @@ export function CalculatorForm({ state, updateField, updateStatus }: Props) {
         value={state.activityType}
         year={state.year}
         onChange={(code) => updateField("activityType", code)}
+      />
+
+      {/* County (for PFA Norma) */}
+      <CountySelect
+        value={state.county}
+        onChange={(county) => updateField("county", county)}
       />
 
       {/* Deductible Expenses */}

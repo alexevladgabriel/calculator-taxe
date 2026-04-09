@@ -9,6 +9,10 @@ import { calculateSrlStandard } from "./calculators/srl-standard";
 /**
  * Run all 5 tax structure calculators and compare results.
  * Returns results sorted by net income (highest first) with the winner identified.
+ *
+ * Unsustainable options (e.g. PFA Norma over 25k EUR) are sorted last
+ * and can never be the winner — even if they yield the highest net income,
+ * they cannot be maintained beyond the current year.
  */
 export function compareAllStructures(
   inputs: CalculatorInputs
@@ -23,14 +27,21 @@ export function compareAllStructures(
     calculateSrlStandard(inputs, config),
   ];
 
-  // Sort by net annual income descending (best option first)
-  const sorted = [...results].sort(
-    (a, b) => b.netAnnualIncome - a.netAnnualIncome
-  );
+  // Sort: sustainable first (by net income desc), then unsustainable last (by net income desc)
+  const sorted = [...results].sort((a, b) => {
+    if (a.sustainable !== b.sustainable) {
+      return a.sustainable ? -1 : 1;
+    }
+    return b.netAnnualIncome - a.netAnnualIncome;
+  });
+
+  // Winner must be sustainable
+  const winner =
+    sorted.find((r) => r.sustainable) ?? sorted[0];
 
   return {
     results: sorted,
-    winner: sorted[0],
+    winner,
     yearConfig: config,
   };
 }
