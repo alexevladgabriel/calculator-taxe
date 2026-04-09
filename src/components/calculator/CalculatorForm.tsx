@@ -71,17 +71,16 @@ export function CalculatorForm({ state, updateField, updateStatus }: Props) {
         )}
       </div>
 
-      {/* Activity Type (for PFA Norma) */}
-      <ActivitySelect
-        value={state.activityType}
-        year={state.year}
-        onChange={(code) => updateField("activityType", code)}
-      />
-
-      {/* County (for PFA Norma) */}
+      {/* County + Activity (for PFA Norma) */}
       <CountySelect
         value={state.county}
         onChange={(county) => updateField("county", county)}
+      />
+      <ActivitySelect
+        value={state.activityType}
+        year={state.year}
+        county={state.county}
+        onChange={(code) => updateField("activityType", code)}
       />
 
       {/* Deductible Expenses */}

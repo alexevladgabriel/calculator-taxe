@@ -1,22 +1,52 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { getYearConfig, type NormaActivity } from "@/lib/tax-engine";
+import { getYearConfig, getNormaForCounty, type NormaActivity } from "@/lib/tax-engine";
+import { getActivitiesForCounty } from "@/lib/tax-engine/norme-lookup";
 import { Search, X } from "lucide-react";
 import { formatNumber } from "@/lib/format";
 
 interface ActivitySelectProps {
   readonly value: string;
   readonly year: number;
+  readonly county: string;
   readonly onChange: (code: string) => void;
 }
 
-export function ActivitySelect({ value, year, onChange }: ActivitySelectProps) {
+interface ActivityItem {
+  readonly code: string;
+  readonly label: string;
+  readonly norma: number;
+}
+
+export function ActivitySelect({ value, year, county, onChange }: ActivitySelectProps) {
   const [search, setSearch] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
-  const config = getYearConfig(year);
-  const activities = config.normaActivities;
+  // Merge county ANAF data with config defaults
+  const activities: ActivityItem[] = useMemo(() => {
+    const config = getYearConfig(year);
+    const countyActivities = getActivitiesForCounty(county, year);
+
+    if (countyActivities.length > 0) {
+      // Use county data, enriching labels from config where available
+      const configLabels = new Map(
+        config.normaActivities.map((a) => [a.code, a.label])
+      );
+      return countyActivities.map((a) => ({
+        code: a.caen,
+        label: a.label || configLabels.get(a.caen) || `CAEN ${a.caen}`,
+        norma: a.norma,
+      }));
+    }
+
+    // Fallback to config defaults
+    return config.normaActivities.map((a) => ({
+      code: a.code,
+      label: a.label,
+      norma: a.annualNorma,
+    }));
+  }, [year, county]);
 
   const filtered = useMemo(() => {
     if (!search) return activities;
@@ -46,7 +76,7 @@ export function ActivitySelect({ value, year, onChange }: ActivitySelectProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onClick={(e) => e.stopPropagation()}
-              placeholder="Caută activitate..."
+              placeholder="Cauta activitate sau cod CAEN..."
               className="flex-1 bg-transparent outline-none placeholder:text-zinc-500"
               autoFocus
             />
@@ -58,7 +88,7 @@ export function ActivitySelect({ value, year, onChange }: ActivitySelectProps) {
                   {selected.label}
                 </>
               ) : (
-                <span className="text-zinc-500">Selectează activitatea</span>
+                <span className="text-zinc-500">Selecteaza activitatea</span>
               )}
             </span>
           )}
@@ -81,52 +111,34 @@ export function ActivitySelect({ value, year, onChange }: ActivitySelectProps) {
         <div className="absolute z-20 mt-1.5 w-full rounded-xl border border-zinc-200 bg-white shadow-lg max-h-64 overflow-y-auto">
           {filtered.length === 0 ? (
             <div className="px-4 py-3 text-sm text-zinc-500">
-              Nicio activitate găsită
+              Nicio activitate gasita
             </div>
           ) : (
             filtered.map((activity) => (
-              <ActivityOption
+              <button
                 key={activity.code}
-                activity={activity}
-                isSelected={activity.code === value}
-                onSelect={() => {
+                type="button"
+                onClick={() => {
                   onChange(activity.code);
                   setIsOpen(false);
                   setSearch("");
                 }}
-              />
+                className={`w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-50 flex items-center justify-between ${
+                  activity.code === value ? "bg-zinc-50 font-medium" : ""
+                }`}
+              >
+                <span className="truncate">
+                  <span className="text-zinc-500 mr-1.5">{activity.code}</span>
+                  {activity.label}
+                </span>
+                <span className="text-xs text-zinc-500 ml-2 shrink-0">
+                  {formatNumber(activity.norma)} lei/an
+                </span>
+              </button>
             ))
           )}
         </div>
       )}
     </div>
-  );
-}
-
-function ActivityOption({
-  activity,
-  isSelected,
-  onSelect,
-}: {
-  readonly activity: NormaActivity;
-  readonly isSelected: boolean;
-  readonly onSelect: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-zinc-50 flex items-center justify-between ${
-        isSelected ? "bg-zinc-50 font-medium" : ""
-      }`}
-    >
-      <span className="truncate">
-        <span className="text-zinc-500 mr-1.5">{activity.code}</span>
-        {activity.label}
-      </span>
-      <span className="text-xs text-zinc-500 ml-2 shrink-0">
-        {formatNumber(activity.annualNorma)} lei/an
-      </span>
-    </button>
   );
 }
